@@ -26,5 +26,14 @@ management:
       probes:
         enabled: true
 
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka}
+    register-with-eureka: ${EUREKA_CLIENT_REGISTER:true}
+    fetch-registry: false
+  instance:
+    prefer-ip-address: ${EUREKA_INSTANCE_PREFER_IP_ADDRESS:true}
+
 server:
   port: 8000

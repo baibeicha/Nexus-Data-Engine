@@ -60,7 +60,7 @@ public class JwtAuthFilter implements WebFilter {
 
     private Mono<Boolean> validateTokenWithAuthService(String token) {
         return webClient.post()
-                .uri("lb://auth-service" + authUrl)
+                .uri("lb://nexus-auth" + authUrl)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(token)
                 .retrieve()
