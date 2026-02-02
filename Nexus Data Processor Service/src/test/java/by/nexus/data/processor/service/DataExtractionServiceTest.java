@@ -56,13 +56,14 @@ class DataExtractionServiceTest {
                     "username VARCHAR(255), " +
                     "salary DECIMAL(10, 2), " +
                     "is_active BOOLEAN, " +
+                    "tags VARCHAR ARRAY, " +
                     "created_at TIMESTAMP)");
 
             stmt.execute("TRUNCATE TABLE test_users");
 
             stmt.execute("INSERT INTO test_users VALUES " +
-                    "(1, 'Alice', 5000.50, true, '2024-01-01 10:00:00'), " +
-                    "(2, 'Bob', 3000.00, false, '2024-01-02 12:30:00')");
+                    "(1, 'Alice', 5000.50, true, ARRAY['admin', 'staff'], '2024-01-01 10:00:00'), " +
+                    "(2, 'Bob', 3000.00, false, ARRAY['guest'], '2024-01-02 12:30:00')");
         }
     }
 
@@ -90,6 +91,9 @@ class DataExtractionServiceTest {
         assertEquals(2, records.size(), "Должно быть ровно 2 записи");
 
         GenericRecord record1 = records.getFirst();
+        List<?> tags = (List<?>) record1.get("tags");
+        assertEquals(2, tags.size());
+        assertEquals("admin", tags.getFirst().toString());
         assertEquals(1, record1.get("id")); // Avro int -> Java int
         assertEquals("Alice", record1.get("username").toString()); // Avro Utf8 -> String
         assertEquals(5000.5, record1.get("salary"));
@@ -118,5 +122,4 @@ class DataExtractionServiceTest {
         }
         return records;
     }
-
 }
