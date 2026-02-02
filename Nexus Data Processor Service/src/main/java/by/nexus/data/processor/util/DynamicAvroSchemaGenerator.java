@@ -20,10 +20,11 @@ public class DynamicAvroSchemaGenerator {
 
         for (int i = 1; i <= columnCount; i++) {
             String columnName = metaData.getColumnName(i);
-
             String safeName = normalizeName(columnName);
 
-            switch (sqlType(metaData, i)) {
+            int sqlType = metaData.getColumnType(i);
+
+            switch (sqlType) {
                 case Types.INTEGER, Types.SMALLINT, Types.TINYINT ->
                         fields.name(safeName).type().nullable().intType().noDefault();
                 case Types.BIGINT ->
@@ -38,6 +39,12 @@ public class DynamicAvroSchemaGenerator {
                 case Types.DATE ->
                         fields.name(safeName).type().nullable().intBuilder()
                                 .prop("logicalType", "date").endInt().noDefault();
+                case Types.ARRAY ->
+                        fields.name(safeName).type().nullable().array()
+                                .items().nullable().stringType()
+                                .noDefault();
+                case Types.OTHER, Types.STRUCT, Types.JAVA_OBJECT, Types.SQLXML ->
+                        fields.name(safeName).type().nullable().stringType().noDefault();
                 default ->
                         fields.name(safeName).type().nullable().stringType().noDefault();
             }
@@ -46,15 +53,11 @@ public class DynamicAvroSchemaGenerator {
         return fields.endRecord();
     }
 
-    public String normalizeName(String rawName) {
+    public static String normalizeName(String rawName) {
         String safe = rawName.toLowerCase().replaceAll("[^a-z0-9_]", "_");
-        if (Character.isDigit(safe.charAt(0))) {
+        if (safe.isEmpty() || Character.isDigit(safe.charAt(0))) {
             return "_" + safe;
         }
         return safe;
-    }
-
-    private int sqlType(ResultSetMetaData meta, int i) throws SQLException {
-        return meta.getColumnType(i);
     }
 }
