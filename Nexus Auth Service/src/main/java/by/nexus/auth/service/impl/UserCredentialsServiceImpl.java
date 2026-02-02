@@ -46,7 +46,6 @@ public class UserCredentialsServiceImpl implements UserCredentialsService {
                 userCredentialsRepository.findByUsername(authEntity.username()).orElse(null);
         if (userCredentials == null) {
             userCredentials = userCredentialsMapper.toEntity(authEntity);
-            userCredentials.setUserId(0L);
         } else {
             userCredentials = userCredentialsMapper.merge(userCredentials, authEntity);
         }
