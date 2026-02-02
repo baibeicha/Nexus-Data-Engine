@@ -7,18 +7,25 @@ spring:
         webflux:
           routes:
             - id: core-service
-              uri: lb://core-service
+              uri: lb://NEXUS-CORE
               predicates:
-                - Path=/api/v1/cards/**
+                - Path=/api/v1/core/**
 
             - id: auth-service
-              uri: lb://auth-service
+              uri: lb://NEXUS-AUTH
               predicates:
                 - Path=/api/v1/auth/**
 
+            - id: file-download-route
+              uri: lb://NEXUS-DATA-PROCESSOR
+              predicates:
+                - Path=/api/v1/downloads/**
+              filters:
+                - RewritePath=/api/v1/downloads/(?<segment>.*), /api/internal/files/${segment}
+
 auth:
   url:
-    validate: /api/v1/auth/validate
+    validate: lb://NEXUS-AUTH/api/v1/auth/validate
 
 management:
   endpoint:
