@@ -1,11 +1,12 @@
 package by.nexus.nexusdesktop.controller;
 
+import by.nexus.nexusdesktop.annotation.FxController;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
-import org.springframework.stereotype.Component;
 
-@Component
+@FxController
 public class HelloController {
+
     @FXML
     private Label welcomeText;
 
