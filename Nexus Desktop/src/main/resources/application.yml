@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: Nexus-Desktop
+
+app:
+  fx:
+    template-path: "/template/"
+    start-page: "hello-view"
