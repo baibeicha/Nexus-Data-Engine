@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: Nexus-Gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: core-service
+              uri: lb://core-service
+              predicates:
+                - Path=/api/v1/cards/**
+
+            - id: auth-service
+              uri: lb://auth-service
+              predicates:
+                - Path=/api/v1/auth/**
+
+auth:
+  url:
+    validate: /api/v1/auth/validate
+
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+server:
+  port: 8000
