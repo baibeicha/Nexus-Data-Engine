@@ -1,0 +1,26 @@
+plugins {
+    id 'java-library'
+}
+
+group = 'by.nexus.io'
+version = '1.0.0'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+dependencies {
+    implementation 'org.apache.hadoop:hadoop-common:3.4.2'
+    implementation 'org.apache.hadoop:hadoop-mapreduce-client-core:3.4.2'
+    implementation 'org.apache.parquet:parquet-avro:1.17.0'
+    implementation 'org.apache.parquet:parquet-common:1.17.0'
+
+    implementation 'tools.jackson.core:jackson-databind:3.0.3'
+
+    compileOnly 'org.projectlombok:lombok:1.18.30'
+    annotationProcessor 'org.projectlombok:lombok:1.18.30'
+
+    implementation 'org.slf4j:slf4j-api:2.0.9'
+}
