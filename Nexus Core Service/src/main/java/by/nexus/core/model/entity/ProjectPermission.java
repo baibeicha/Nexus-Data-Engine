@@ -19,6 +19,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serializable;
+import java.util.UUID;
 
 @Entity
 @Table(name = "project_permissions")
@@ -46,11 +47,21 @@ public class ProjectPermission {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class ProjectPermissionId implements Serializable {
-        private Long projectId;
+        private UUID projectId;
         private String userId;
     }
 
     public enum AccessLevel {
-        VIEWER, EDITOR, ADMIN
+        VIEWER(0), EDITOR(1), ADMIN(2), OWNER(3);
+
+        private final int accessLevel;
+
+        AccessLevel(int level) {
+            this.accessLevel = level;
+        }
+
+        public boolean hasAccess(AccessLevel accessLevel) {
+            return accessLevel.accessLevel >= this.accessLevel;
+        }
     }
 }

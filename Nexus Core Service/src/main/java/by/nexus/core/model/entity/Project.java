@@ -21,6 +21,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "projects")
@@ -34,7 +35,7 @@ public class Project {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    private Long id;
+    private UUID id;
 
     @Column(nullable = false)
     private String name;
@@ -44,8 +45,8 @@ public class Project {
     @Column(name = "owner_id", nullable = false)
     private String ownerId;
 
-    @Column(name = "encryption_key_id")
-    private String encryptionKeyId;
+    @Column(name = "encryption_key")
+    private String encryptionKey;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -60,4 +61,12 @@ public class Project {
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProjectPermission> permissions = new ArrayList<>();
+
+    public void addFileNode(FileNode fileNode) {
+        fileNodes.add(fileNode);
+    }
+
+    public void addPermission(ProjectPermission permission) {
+        permissions.add(permission);
+    }
 }

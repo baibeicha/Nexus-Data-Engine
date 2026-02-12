@@ -6,5 +6,6 @@ public record ImportCompletedEvent(
         String storagePath,
         long fileSize,
         String errorMessage
-) {}
+) {
+}
 

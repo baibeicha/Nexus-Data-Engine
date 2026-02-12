@@ -19,6 +19,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Table(name = "file_versions")
@@ -32,14 +33,14 @@ public class FileVersion {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    private Long id;
+    private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "file_node_id", nullable = false)
     private FileNode fileNode;
 
     @Column(nullable = false)
-    private Integer version;
+    private Integer version = 1;
 
     @Column(name = "storage_path", nullable = false)
     private String storagePath;
@@ -52,4 +53,14 @@ public class FileVersion {
 
     @CreatedDate
     private Instant createdAt;
+
+    public synchronized FileVersion increment() {
+        return FileVersion.builder()
+                .fileNode(fileNode)
+                .version(version++)
+                .storagePath(storagePath)
+                .createdBy(createdBy)
+                .sizeBytes(sizeBytes)
+                .build();
+    }
 }
