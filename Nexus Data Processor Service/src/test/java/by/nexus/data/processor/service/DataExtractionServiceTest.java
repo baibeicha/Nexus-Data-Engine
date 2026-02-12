@@ -2,9 +2,9 @@ package by.nexus.data.processor.service;
 
 import by.nexus.data.processor.event.ImportRequestEvent;
 import by.nexus.data.processor.service.impl.NxdtDataExtractionService;
-import by.nexus.data.processor.util.DynamicAvroSchemaGenerator;
-import by.nexus.data.processor.util.JdbcToAvroConverter;
-import by.nexus.data.processor.util.ParquetIo;
+import com.github.baibeicha.nexus.io.parquet.ParquetIo;
+import com.github.baibeicha.nexus.io.sql.DynamicAvroSchemaGenerator;
+import com.github.baibeicha.nexus.io.sql.JdbcToAvroConverter;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.hadoop.conf.Configuration;
