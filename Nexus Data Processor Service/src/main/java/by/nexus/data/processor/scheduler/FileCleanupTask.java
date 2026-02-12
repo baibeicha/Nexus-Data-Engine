@@ -30,8 +30,9 @@ public class FileCleanupTask {
             files.forEach(path -> {
                 try {
                     File file = path.toFile();
-                    BasicFileAttributes attr = Files.readAttributes(path, BasicFileAttributes.class);
-                    Instant fileCreationTime = attr.creationTime().toInstant();
+                    Instant fileCreationTime = Files.readAttributes(path, BasicFileAttributes.class)
+                            .creationTime()
+                            .toInstant();
 
                     if (fileCreationTime.isBefore(retentionLimit)) {
                         if (file.delete()) {

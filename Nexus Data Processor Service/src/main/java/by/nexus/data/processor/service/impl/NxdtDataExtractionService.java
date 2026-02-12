@@ -2,9 +2,9 @@ package by.nexus.data.processor.service.impl;
 
 import by.nexus.data.processor.service.DataExtractionService;
 import by.nexus.data.processor.event.ImportRequestEvent;
-import by.nexus.data.processor.util.DynamicAvroSchemaGenerator;
-import by.nexus.data.processor.util.JdbcToAvroConverter;
-import by.nexus.data.processor.util.ParquetIo;
+import com.github.baibeicha.nexus.io.format.nxdt.NxdtWriter;
+import com.github.baibeicha.nexus.io.sql.DynamicAvroSchemaGenerator;
+import com.github.baibeicha.nexus.io.sql.JdbcToAvroConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.Schema;
@@ -14,7 +14,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.avro.AvroParquetWriter;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
-import org.apache.parquet.io.OutputFile;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -55,8 +54,6 @@ public class NxdtDataExtractionService implements DataExtractionService {
             targetFile.delete();
         }
 
-        OutputFile outputFile = new ParquetIo.NioOutputFile(targetFile.toPath());
-
         try (Connection conn = DriverManager.getConnection(
                 event.connectionUrl(),
                 event.username(),
@@ -67,36 +64,22 @@ public class NxdtDataExtractionService implements DataExtractionService {
 
             try (ResultSet rs = stmt.executeQuery(event.sqlQuery())) {
                 ResultSetMetaData metaData = rs.getMetaData();
-
                 Schema schema = schemaGenerator.generate(metaData);
-                log.debug("Generated Avro Schema: {}", schema.toString(true));
 
-                try (ParquetWriter<GenericRecord> writer = AvroParquetWriter.<GenericRecord>builder(outputFile)
-                        .withSchema(schema)
-                        .withCompressionCodec(CompressionCodecName.SNAPPY)
-
-                        .withRowGroupSize(16L * 1024 * 1024) // 16MB блок
-                        .withPageSize(1024 * 1024)           // 1MB страница
-
-                        .withDataModel(GenericData.get())
-                        .withConf(new Configuration())
-                        .build()) {
-
+                try (NxdtWriter writer = new NxdtWriter(targetFile.toPath(), schema)) {
                     int columnCount = metaData.getColumnCount();
 
                     while (rs.next()) {
-                        GenericRecord record = new GenericData.Record(schema);
+                        GenericRecord record = writer.createRecord();
 
                         for (int i = 1; i <= columnCount; i++) {
-                            String columnName = metaData.getColumnName(i);
-                            String safeName = schemaGenerator.normalizeName(columnName);
-                            int sqlType = metaData.getColumnType(i);
-
-                            Object val = jdbcToAvroConverter.convert(rs, i, sqlType);
-                            record.put(safeName, val);
+                            record.put(
+                                    DynamicAvroSchemaGenerator.normalizeName(metaData.getColumnName(i)),
+                                    jdbcToAvroConverter.convert(rs, i, metaData.getColumnType(i))
+                            );
                         }
 
-                        writer.write(record);
+                        writer.writeRecord(record);
                     }
                 }
             }
