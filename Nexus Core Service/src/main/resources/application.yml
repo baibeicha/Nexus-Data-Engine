@@ -1,6 +1,30 @@
 spring:
   application:
     name: Nexus-Core-Service
+  threads:
+    virtual:
+      enabled: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        spring.json.add.type.info: false
+    consumer:
+      group-id: ${CONSUMER_GROUP:core-service-group}
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    topics:
+      import-request: "import-requests"
+      import-completed: "import-completed"
+      sync-events: "sync-events"
+
+nexus:
+  storage:
+    path: ./nexus_storage
+    download-base-url: lb://NEXUS-DATA-PROCESSOR:8082/api/internal/files
 
 eureka:
   client:
