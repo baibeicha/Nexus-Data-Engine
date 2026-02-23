@@ -1,6 +1,16 @@
 spring:
   application:
     name: Nexus-Sync
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+    consumer:
+      group-id: ${CONSUMER_GROUP:sync-service-group}
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    topics:
+      import-completed: "import-completed"
+      sync-events: "sync-events"
 
 eureka:
   client:

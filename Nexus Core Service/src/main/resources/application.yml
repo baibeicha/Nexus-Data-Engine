@@ -4,6 +4,19 @@ spring:
   threads:
     virtual:
       enabled: true
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/nexus_core}
+    username: ${DB_USERNAME:nexus}
+    password: ${DB_PASSWORD:nexus_password}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
     producer:
@@ -25,6 +38,9 @@ nexus:
   storage:
     path: ./nexus_storage
     download-base-url: lb://NEXUS-DATA-PROCESSOR:8082/api/internal/files
+  encryption:
+    master-key: ${NEXUS_MASTER_KEY:}
+    enabled: ${NEXUS_ENCRYPTION_ENABLED:true}
 
 eureka:
   client:
@@ -40,3 +56,6 @@ management:
     health:
       probes:
         enabled: true
+
+server:
+  port: ${SERVER_PORT:8081}
