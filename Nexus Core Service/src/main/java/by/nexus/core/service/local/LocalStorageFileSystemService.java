@@ -1,7 +1,6 @@
 package by.nexus.core.service.local;
 
 import by.nexus.core.exception.FailedToCreateStorageFolderException;
-import by.nexus.core.exception.FailedToDeleteStorageFolderException;
 import by.nexus.core.exception.FailedToMoveFileException;
 import by.nexus.core.exception.FileNodeNotExistsException;
 import by.nexus.core.exception.PermissionException;
@@ -23,7 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -32,7 +30,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.UUID;
 
 @Slf4j
@@ -113,11 +110,21 @@ public class LocalStorageFileSystemService implements FileSystemService {
 
     @Override
     public void deleteProject(String userId, String projectName) {
-        projectRepository.findByNameAndOwnerId(projectName, userId).ifPresent(project -> {
-            projectRepository.delete(project);
-            String rootPath = generateStoragePath(userId, project.getId());
-            deleteDirectoryRecursively(Paths.get(rootPath));
-        });
+        projectRepository.findByNameAndOwnerId(projectName, userId)
+                .ifPresent(project -> deleteProject(project, userId));
+    }
+
+    @Override
+    public void deleteProject(String userId, UUID projectId) {
+        projectRepository.findById(projectId)
+                .ifPresent(project -> deleteProject(project, userId));
+    }
+
+    private void deleteProject(Project project, String userId) {
+        checkPermission(userId, project.getId(), ProjectPermission.AccessLevel.ADMIN);
+        projectRepository.delete(project);
+        String rootPath = generateStoragePath(userId, project.getId());
+        deleteDirectoryRecursively(Paths.get(rootPath));
     }
 
     @Override

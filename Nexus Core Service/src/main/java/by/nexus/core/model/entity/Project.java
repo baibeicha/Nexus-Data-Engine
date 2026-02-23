@@ -61,12 +61,4 @@ public class Project {
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProjectPermission> permissions = new ArrayList<>();
-
-    public void addFileNode(FileNode fileNode) {
-        fileNodes.add(fileNode);
-    }
-
-    public void addPermission(ProjectPermission permission) {
-        permissions.add(permission);
-    }
 }

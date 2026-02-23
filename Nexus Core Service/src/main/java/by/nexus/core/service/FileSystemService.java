@@ -11,6 +11,7 @@ import java.util.UUID;
 public interface FileSystemService {
     Project createProject(String userId, String projectName, String description);
     void deleteProject(String userId, String projectName);
+    void deleteProject(String userId, UUID projectId);
     FileNode createNode(UUID projectId, UUID parentId, String name, FileNode.FileType type, String userId);
     void deleteNode(UUID nodeId, String userId);
     void moveNode(UUID nodeId, UUID targetParentId, String userId);
