@@ -28,7 +28,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/healthcheck", "/actuator/**").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers("/api/v1/auth/register", "/api/v1/auth/tokens", "/api/v1/auth/validate", "/api/v1/auth/refresh").permitAll()
+                        .requestMatchers("/api/v1/auth/master-key").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

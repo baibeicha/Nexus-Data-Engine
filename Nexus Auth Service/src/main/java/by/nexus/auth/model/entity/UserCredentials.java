@@ -9,6 +9,7 @@ import lombok.Data;
 
 @Data
 @Entity
+@Table(name = "user_credentials")
 public class UserCredentials {
 
     @Id
@@ -27,6 +28,33 @@ public class UserCredentials {
     @Column(nullable = false)
     private boolean enabled = true;
 
-    @Column(nullable = false)
-    private String key;
+    /**
+     * Зашифрованный master key пользователя (wrapped key).
+     * Ключ шифруется с использованием derived key из пароля пользователя.
+     */
+    @Column(name = "encrypted_master_key", nullable = false)
+    private String encryptedMasterKey;
+
+    /**
+     * Соль для PBKDF2 при генерации derived key из пароля.
+     * Используется для расшифровки encryptedMasterKey на клиенте.
+     */
+    @Column(name = "key_salt", nullable = false)
+    private String keySalt;
+
+    /**
+     * @deprecated Используйте getEncryptedMasterKey()
+     */
+    @Deprecated
+    public String getKey() {
+        return encryptedMasterKey;
+    }
+
+    /**
+     * @deprecated Используйте setEncryptedMasterKey()
+     */
+    @Deprecated
+    public void setKey(String key) {
+        this.encryptedMasterKey = key;
+    }
 }

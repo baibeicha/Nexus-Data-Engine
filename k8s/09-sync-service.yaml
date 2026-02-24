@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sync-service
+  namespace: nexus-data-engine
+  labels:
+    app: sync-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sync-service
+  template:
+    metadata:
+      labels:
+        app: sync-service
+    spec:
+      initContainers:
+        - name: wait-for-redis
+          image: busybox:1.36
+          command: ['sh', '-c', 'until nc -z redis 6379; do echo waiting for redis; sleep 2; done;']
+        - name: wait-for-kafka
+          image: busybox:1.36
+          command: ['sh', '-c', 'until nc -z kafka 9092; do echo waiting for kafka; sleep 2; done;']
+        - name: wait-for-discovery
+          image: busybox:1.36
+          command: ['sh', '-c', 'until nc -z discovery-service 8761; do echo waiting for discovery; sleep 2; done;']
+        - name: wait-for-auth
+          image: busybox:1.36
+          command: ['sh', '-c', 'until nc -z auth-service 9000; do echo waiting for auth; sleep 2; done;']
+      containers:
+        - name: sync-service
+          image: nexus-sync-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8085
+          env:
+            - name: SERVER_PORT
+              value: "8085"
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-config
+                  key: REDIS_HOST
+            - name: REDIS_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-config
+                  key: REDIS_PORT
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-config
+                  key: KAFKA_BOOTSTRAP_SERVERS
+            - name: CONSUMER_GROUP
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-config
+                  key: CONSUMER_GROUP_SYNC
+            - name: EUREKA_SERVER_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-config
+                  key: EUREKA_SERVER_URL
+            - name: EUREKA_CLIENT_REGISTER
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-config
+                  key: EUREKA_CLIENT_REGISTER
+            - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-config
+                  key: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8085
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8085
+            initialDelaySeconds: 30
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sync-service
+  namespace: nexus-data-engine
+spec:
+  selector:
+    app: sync-service
+  ports:
+    - port: 8085
+      targetPort: 8085
+  type: ClusterIP

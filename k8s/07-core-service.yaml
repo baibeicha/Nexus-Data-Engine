@@ -1,0 +1,142 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: core-storage-pvc
+  namespace: nexus-data-engine
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: core-service
+  namespace: nexus-data-engine
+  labels:
+    app: core-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: core-service
+  template:
+    metadata:
+      labels:
+        app: core-service
+    spec:
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:1.36
+          command: ['sh', '-c', 'until nc -z postgres-core 5432; do echo waiting for postgres; sleep 2; done;']
+        - name: wait-for-kafka
+          image: busybox:1.36
+          command: ['sh', '-c', 'until nc -z kafka 9092; do echo waiting for kafka; sleep 2; done;']
+        - name: wait-for-discovery
+          image: busybox:1.36
+          command: ['sh', '-c', 'until nc -z discovery-service 8761; do echo waiting for discovery; sleep 2; done;']
+        - name: wait-for-auth
+          image: busybox:1.36
+          command: ['sh', '-c', 'until nc -z auth-service 9000; do echo waiting for auth; sleep 2; done;']
+      containers:
+        - name: core-service
+          image: nexus-core-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8081
+          env:
+            - name: SERVER_PORT
+              value: "8081"
+            - name: DB_URL
+              value: "jdbc:postgresql://postgres-core:5432/nexus_core"
+            - name: DB_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-config
+                  key: DB_USERNAME
+            - name: DB_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-config
+                  key: DB_PASSWORD
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-config
+                  key: KAFKA_BOOTSTRAP_SERVERS
+            - name: CONSUMER_GROUP
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-config
+                  key: CONSUMER_GROUP_CORE
+            - name: EUREKA_SERVER_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-config
+                  key: EUREKA_SERVER_URL
+            - name: EUREKA_CLIENT_REGISTER
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-config
+                  key: EUREKA_CLIENT_REGISTER
+            - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-config
+                  key: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+            - name: NEXUS_STORAGE_PATH
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-config
+                  key: NEXUS_STORAGE_PATH_CORE
+            - name: NEXUS_STORAGE_DOWNLOAD_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-config
+                  key: NEXUS_STORAGE_DOWNLOAD_BASE_URL
+            - name: NEXUS_MASTER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-secrets
+                  key: NEXUS_MASTER_KEY
+          volumeMounts:
+            - name: storage
+              mountPath: /app/storage
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 10
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: core-storage-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: core-service
+  namespace: nexus-data-engine
+spec:
+  selector:
+    app: core-service
+  ports:
+    - port: 8081
+      targetPort: 8081
+  type: ClusterIP

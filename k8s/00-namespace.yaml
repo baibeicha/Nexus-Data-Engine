@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nexus-data-engine
+  labels:
+    app: nexus-data-engine
+    version: v1

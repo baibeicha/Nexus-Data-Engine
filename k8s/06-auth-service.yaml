@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: nexus-data-engine
+  labels:
+    app: auth-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:1.36
+          command: ['sh', '-c', 'until nc -z postgres-auth 5432; do echo waiting for postgres; sleep 2; done;']
+        - name: wait-for-discovery
+          image: busybox:1.36
+          command: ['sh', '-c', 'until nc -z discovery-service 8761; do echo waiting for discovery; sleep 2; done;']
+      containers:
+        - name: auth-service
+          image: nexus-auth-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9000
+          env:
+            - name: SERVER_PORT
+              value: "9000"
+            - name: DB_URL
+              value: "jdbc:postgresql://postgres-auth:5432/nexus_auth"
+            - name: DB_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-config
+                  key: DB_USERNAME
+            - name: DB_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-config
+                  key: DB_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-secrets
+                  key: JWT_SECRET
+            - name: ACCESS_EXPIRATION
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-config
+                  key: ACCESS_EXPIRATION
+            - name: REFRESH_EXPIRATION
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-config
+                  key: REFRESH_EXPIRATION
+            - name: EUREKA_SERVER_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-config
+                  key: EUREKA_SERVER_URL
+            - name: EUREKA_CLIENT_REGISTER
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-config
+                  key: EUREKA_CLIENT_REGISTER
+            - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-config
+                  key: EUREKA_INSTANCE_PREFER_IP_ADDRESS
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 9000
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 9000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: nexus-data-engine
+spec:
+  selector:
+    app: auth-service
+  ports:
+    - port: 9000
+      targetPort: 9000
+  type: ClusterIP
